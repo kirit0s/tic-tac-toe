@@ -122,12 +122,14 @@ function checkWin(cell, currentPlayer) {
         cell.classList.add('diagonal-right');
       });
     }
+    field.removeEventListener('click', clickHanler);
     return;
   }
 
   if (gameMoves.length === 9) {
     wonTitle.classList.remove('hidden');
     wonMessage.innerText = `It's a draw!`;
+    field.removeEventListener('click', clickHanler);
   }
 }
 
@@ -139,18 +141,21 @@ function restartGame() {
   gameMoves = [];
   checkUndoRedo();
   wonTitle.classList.add('hidden');
+  field.addEventListener('click', clickHanler);
 }
 
-// Listeners
-checkUndoRedo();
-
-field.addEventListener('click', event => {
+function clickHanler(event) {
   if (event.target.className === 'cell') {
     makeMove(event.target);
   } else {
     event.stopPropagation();
   }
-});
+}
+
+// Listeners
+checkUndoRedo();
+
+field.addEventListener('click', clickHanler);
 
 undoButton.addEventListener('click', undoMove);
 
