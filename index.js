@@ -6,10 +6,24 @@ const TAC = 'r';
 
 const undoButton = document.querySelector('.undo-btn');
 const redoButton = document.querySelector('.redo-btn');
+const wonTitle = document.querySelector('.won-title');
+const wonMessage = document.querySelector('.won-message');
+const restartButton = document.querySelector('.restart-btn');
 
 const FIRST_PLAYER = TIC;
 let gameMoves = [];
 let timeMachine = [];
+
+const winCombos = [
+  [0, 1, 2],
+  [3, 4, 5],
+  [6, 7, 8],
+  [0, 3, 6],
+  [1, 4, 7],
+  [2, 5, 8],
+  [0, 4, 8],
+  [2, 4, 6]
+];
 
 // Functions
 function getCurrentPlayer() {
@@ -25,6 +39,8 @@ function undoMove() {
   timeMachine.push(move);
   const cell = document.querySelector(`[data-id="${move.index}"]`);
   cell.classList.remove(move.player);
+  wonTitle.classList.add('hidden');
+  wonMessage.innerText = '';
   checkUndoRedo();
 }
 
@@ -33,6 +49,9 @@ function redoMove() {
   gameMoves.push(move);
   const cell = document.querySelector(`[data-id="${move.index}"]`);
   cell.classList.add(move.player);
+  if (gameMoves.length > 4) {
+    checkWin(cell, move.player);
+  }
   checkUndoRedo();
 }
 
@@ -50,12 +69,81 @@ function makeMove(cell) {
   cell.classList.add(currentPlayer);
   timeMachine = [];
   checkUndoRedo();
+  if (gameMoves.length > 4) {
+    checkWin(cell, currentPlayer);
+  }
   console.log(gameMoves.slice(-1)[0]);
 }
 
-function checkWin(params) {}
+function checkWin(cell, currentPlayer) {
+  const currentPlayerMoves = gameMoves
+    .filter(move => move.player === currentPlayer)
+    .map(currentPlayerMove => +currentPlayerMove.index);
+
+  const winCombo = winCombos.filter(combo =>
+    combo.every(cell => currentPlayerMoves.includes(cell))
+  );
+
+  if (winCombo.length > 0) {
+    wonTitle.classList.remove('hidden');
+    wonMessage.innerText = currentPlayer === TIC ? 'Crosses won!' : 'Toes won!';
+    const winComboArray = winCombo[0];
+    if (
+      winComboArray[2] - winComboArray[1] === 1 &&
+      winComboArray[1] - winComboArray[0] === 1
+    ) {
+      winComboArray.forEach(index => {
+        const cell = document.querySelector(`[data-id="${index}"]`);
+        cell.classList.add('win');
+        cell.classList.add('horizontal');
+      });
+    } else if (
+      winComboArray[2] - winComboArray[1] === 3 &&
+      winComboArray[1] - winComboArray[0] === 3
+    ) {
+      winComboArray.forEach(index => {
+        const cell = document.querySelector(`[data-id="${index}"]`);
+        cell.classList.add('win');
+        cell.classList.add('vertical');
+      });
+    } else if (
+      winComboArray[2] - winComboArray[1] === 2 &&
+      winComboArray[1] - winComboArray[0] === 2
+    ) {
+      winComboArray.forEach(index => {
+        const cell = document.querySelector(`[data-id="${index}"]`);
+        cell.classList.add('win');
+        cell.classList.add('diagonal-left');
+      });
+    } else {
+      winComboArray.forEach(index => {
+        const cell = document.querySelector(`[data-id="${index}"]`);
+        cell.classList.add('win');
+        cell.classList.add('diagonal-right');
+      });
+    }
+    return;
+  }
+
+  if (gameMoves.length === 9) {
+    wonTitle.classList.remove('hidden');
+    wonMessage.innerText = `It's a draw!`;
+  }
+}
+
+function restartGame() {
+  gameMoves.forEach(move => {
+    const cell = document.querySelector(`[data-id="${move.index}"]`);
+    cell.className = 'cell';
+  });
+  gameMoves = [];
+  checkUndoRedo();
+  wonTitle.classList.add('hidden');
+}
 
 // Listeners
+checkUndoRedo();
+
 field.addEventListener('click', event => {
   if (event.target.className === 'cell') {
     makeMove(event.target);
@@ -64,6 +152,8 @@ field.addEventListener('click', event => {
   }
 });
 
-undoButton.addEventListener('click', () => undoMove());
+undoButton.addEventListener('click', undoMove);
 
-redoButton.addEventListener('click', () => redoMove());
+redoButton.addEventListener('click', redoMove);
+
+restartButton.addEventListener('click', restartGame);
